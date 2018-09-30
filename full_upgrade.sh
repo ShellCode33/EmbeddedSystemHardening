@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# NOTE : When using scp/ssh we do not check the identity of the server because it will change everytime we reflash the raspberry pi. It's not an issue because this script is only to be used in a dev environment. It would be a huge security hole to create a permanent identity key on the host, so it's better this way.
+
 if [ "$#" -ne 3 ]; then
     echo "Usage: $0 [REMOTE IP] [SSH PRIVATE KEY] [IMAGE PATH]"
     exit 1

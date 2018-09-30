@@ -139,10 +139,12 @@ We will see two different ways of altering our system remotly.
 This method is the more drastic one, it will write every single byte of the sdcard. It can be really time consuming depending on how big your system image is.
 All we have to do is transfer the new sdcard.img to the pi using `scp` and execute `dd` remotly using `ssh`.
 
-We write a small script to automate the task for us : see full_upgrade.sh
+We write a small script to automate the task for us : see ![full_upgrade.sh](https://github.com/ShellCode33/SecuredEmbeddedSystem/blob/master/full_upgrade.sh)
 
 We change the version file, create the system image with `make`, and execute our script to see if it worked :
 ```
+$ ./full_upgrade.sh 
+Usage: ./full_upgrade.sh [REMOTE IP] [SSH PRIVATE KEY] [IMAGE PATH]
 $ ./full_upgrade.sh 192.168.0.42 ~/.ssh/buildroot output/images/sdcard.img
 The host is currently running the following version : 1.2
 Transfering system image to remote system...

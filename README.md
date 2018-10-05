@@ -154,8 +154,46 @@ Rebooting remote system, waiting for it to be up...
 The host is currently running the following version : 1.3
 ```
 
-### Flash specific files
-We will create a custom script
+### Flash the zImage
+The purpose of this is only to demonstrate that we are not forced to flash the whole sdcard. We can also replace the zImage (which contains the kernel and the initramfs). It enables us to
+change the initial filesystem (add/remove/edit files) and update our remote sdcard without having to transfer all the other stuff the system image contains.
+That other stuff includes (among other things) the `bootcode.bin`, the `start.elf` which are responsible for the loading of the system. The kernel's parameters which are in the `cmdline.txt`, etc.
+
+We upgraded the script in order to do that.
+
+```
+$ ./upgrade.sh 192.168.0.42 ~/.ssh/buildroot output/images/zImage
+Upgrading zImage only...
+The host is currently running the following version : 1.3
+Transfering system image to remote system...
+zImage                      100%   24MB   1.8MB/s   00:13
+Writing to sdcard...
+Rebooting remote system, waiting for it to be up...
+The host is currently running the following version : 1.4
+```
+
+What our script does is that it detects the file type you want to flash and does to proper operation.
+
+```bash
+# If the file is a zImage
+if echo "$FILE_TYPE" | grep zImage &> /dev/null
+then
+    echo "Upgrading zImage only..."
+    upgrade_command="mkdir /tmp/mnt; mount ${REMOTE_SDCARD_DEVICE}${PART_NUM} /tmp/mnt; mv /tmp/zImage /tmp/mnt/"
+
+# If the file is a system image
+elif echo "$FILE_TYPE" | grep boot &> /dev/null
+then
+    echo "Upgrading the whole image..."
+    upgrade_command="dd if=/tmp/sdcard.img of='${REMOTE_SDCARD_DEVICE}'"
+
+else
+    echo "Unknown file type. Please provide a system image or a zImage."
+    exit 42
+fi
+```
+
+If it's a system image we want to flash, we perform a `dd`, if it's a `zImage`, we just replace the existing one on the sdcard's partition.
 
 ## Kernel hardening
 

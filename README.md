@@ -4,12 +4,12 @@ In order to download buildroot, go to the [following page](https://buildroot.org
 
 ## Basic configuration
 First, tell buildroot to use the default raspberrypi3 configuration :
-```bash
+```
 $ make raspberrypi3_defconfig
 ```
 
 Then start the configuration UI :
-```bash
+```
 $ make menuconfig
 ```
 
@@ -20,7 +20,7 @@ Do the following changes :
 - Define a root password.
 
 Build the image for the first time :
-```bash
+```
 $ make BR2_JLEVEL=4
 ```
 The `BR2_JLEVEL` option tells buildroot to use multiple CPU cores to compile packages.
@@ -30,7 +30,7 @@ The `BR2_JLEVEL` option tells buildroot to use multiple CPU cores to compile pac
 Buildroot will output a system image named `sdcard.img` in the following folder : `output/images`.
 
 Check the sdcard device location using lsblk :
-```bash
+```
 $ lsblk
 NAME                                          MAJ:MIN RM   SIZE RO TYPE  MOUNTPOINT
 sda                                             8:0    0 465,8G  0 disk  
@@ -44,7 +44,7 @@ sdb                                             8:16   1  14,5G  0 disk
 As you can see, the 14,5GiB storage is the sdcard, it's `/dev/sdb`.
 
 Flashing the system image is as simple as :
-```bash
+```
 $ sudo dd if=output/images/sdcard.img of=/dev/sdb && sync
 ```
 
@@ -60,12 +60,12 @@ We `make` ~~America great~~ the projet again, plug the sdcard into our raspberry
 Now that we have a working overlay, we can overwrite the network configuration in order to give our raspberry a static IP address.
 
 We create the directories to the config file we want to overwrite :
-```bash
+```
 $ mkdir -p board/raspberrypi3/overlay/etc/network
 ```
 
 Then we edit the `interfaces` file to set a static IP :
-```bash
+```
 $ vim board/raspberrypi3/overlay/etc/network/interfaces
 $ cat board/raspberrypi3/overlay/etc/network/interfaces
 auto lo
@@ -82,7 +82,7 @@ iface eth0 inet static
 The `wait-delay` statement is important because the IP address will not be set properly otherwise.
 
 If your Raspberry is directly connected to the ethernet port of your computer, you might want to set a temporary ip address to your eth0 interface :
-```bash
+```
 $ sudo ip addr add 192.168.0.1/24 dev eth0
 ```
 
@@ -90,7 +90,7 @@ Now install the `dropbear` package using `make menuconfig`, you can untick the `
 
 `make` the project, flash the raspberry, and you should be able to ssh into your pi :
 
-```bash
+```
 $ ssh root@192.168.0.42
 The authenticity of host '192.168.0.42 (192.168.0.42)' can't be established.
 ECDSA key fingerprint is SHA256:r5vN8rC+rL/K9Scyw/CYN6cHpBpcsaQljFuHYCc87po.
@@ -105,17 +105,17 @@ root@192.168.0.42's password:
 To allow our future scripts to work without asking the password every single time we perform an `ssh` or `scp` command, we will generate a set of public and private keys to authenticate.
 
 To do so, perform the following command :
-```bash
+```
 $ ssh-keygen -b 4096
 ```
 
 Then copy the public key in the right folder of the overlay :
-```bash
+```
 $ cp ~/.ssh/buildroot.pub board/raspberrypi3/overlay/root/.ssh/authorized_keys
 ```
 
 `make` your project, flash your sdcard, and you should be able to ssh into the pi using the identity file :
-```bash
+```
 $ ssh -i ssh/id_rsa root@192.168.0.42
 The authenticity of host '192.168.0.42 (192.168.0.42)' can't be established.
 ECDSA key fingerprint is SHA256:LJHExFkbAg5q90oB/ZZzAPNDao32dsWu4KeGYL6iLwg.
@@ -142,7 +142,7 @@ All we have to do is transfer the new sdcard.img to the pi using `scp` and execu
 We write a small script to automate the task for us : see ![full_upgrade.sh](https://github.com/ShellCode33/SecuredEmbeddedSystem/blob/master/full_upgrade.sh)
 
 We change the version file, create the system image with `make`, and execute our script to see if it worked :
-```bash
+```
 $ ./full_upgrade.sh 
 Usage: ./full_upgrade.sh [REMOTE IP] [SSH PRIVATE KEY] [IMAGE PATH]
 $ ./full_upgrade.sh 192.168.0.42 ~/.ssh/buildroot output/images/sdcard.img
@@ -161,7 +161,7 @@ That other stuff includes (among other things) the `bootcode.bin`, the `start.el
 
 We upgraded the script in order to do that.
 
-```bash
+```
 $ ./upgrade.sh 192.168.0.42 ~/.ssh/buildroot output/images/zImage
 Upgrading zImage only...
 The host is currently running the following version : 1.3
@@ -227,7 +227,7 @@ We can see the package uses the `ncurses` library. It's a dependency we will als
 You can find how to create a buildroot package [here](https://buildroot.org/downloads/manual/manual.html#adding-packages) on the online documentation.
 
 Let's create a directory for our package :
-```bash
+```
 $ mkdir package/ninvaders
 ```
 
@@ -329,7 +329,7 @@ Saving to: ‘/home/shellcode/Tools/buildroot-rpi3/output/build/.ninvaders-0.1.1
 
 So buildroot successfuly downloaded `nInvaders` from the provided URL in the `ninvaders.mk`.
 We can now upgrade the zImage with our `upgrade.sh` script :
-```bash
+```
 $ ./upgrade.sh 192.168.0.42 ~/.ssh/buildroot output/images/zImage
 Upgrading zImage only...
 The host is currently running the following version : 1.4
@@ -346,13 +346,13 @@ If you ssh into your raspberry, you should be able to use the `nInvaders` comman
 SSH is not really convenient to expose a game on the network, because the user has to log in first. It would be great to be able to initiate a connection on a specific port of our device and being able to play the game immediatly.
 So we will create a telnet server using `telnetd` which will start nInvader when we connect to it.
 In order to install it, we will edit busybox's configuration. To do so, perform the following command :
-```bash
+```
 $ make busybox-menuconfig
 ```
 
 And under `Network utilities`, tick `telnetd`, `make` and upgrade the sdcard again.
 Once the changes have been applied, you should be able to connect to your raspberry using telnet :
-```bash
+```
 $ telnet 192.168.0.42
 Trying 192.168.0.42...
 Connected to 192.168.0.42.
@@ -433,7 +433,7 @@ TELNETD_ARGS="-F -l /usr/bin/nInvaders"
 ```
 
 We restart the telnet daemon :
-```bash
+```
 # /etc/init.d/S50telnet restart
 ```
 
@@ -441,7 +441,7 @@ And now when we telnet the pi, the game starts :)
 
 We have to make thoses changes permanent, we will use buildroot's overlay to overwrite telnet's config. I will not explain that once again, we've done that already previously.
 Do not forget to make your script executable in the overlay, otherwise it will not start at boot :
-```bash
+```
 $ chmod +x board/raspberrypi3/overlay/etc/init.d/S50telnet
 ```
 Now `make`, flash and try to telnet your pi.
@@ -449,7 +449,7 @@ Unfortunatly, the colors are not working. That's because of the `TERM` variable 
 So before the telnetd daemon start, we have to change the `TERM` variable to a terminal emulator which supports colors. We will use `xterm`.
 
 Juste before the call to `start-stop-daemon` we add the following :
-```bash
+```
 TERM=xterm
 ```
 

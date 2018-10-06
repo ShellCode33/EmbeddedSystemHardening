@@ -17,12 +17,4 @@ define NINVADERS_INSTALL_TARGET_CMDS
     $(INSTALL) -D -m 0755 $(@D)/nInvaders $(TARGET_DIR)/usr/bin
 endef
 
-#define NINVADERS_USERS
-#    foo -1 libfoo -1 * - - - LibFoo daemon
-#endef
-
-#define NINVADERS_PERMISSIONS
-#    /bin/foo  f  4755  foo  libfoo   -  -  -  -  -
-#endef
-
 $(eval $(generic-package))

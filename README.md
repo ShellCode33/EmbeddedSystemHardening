@@ -171,8 +171,9 @@ Writing to sdcard...
 Rebooting remote system, waiting for it to be up...
 The host is currently running the following version : 1.4
 ```
+As you can see, only 24MB are transmitted instead of the 32MB of our system image. At this scale, it's not a major improvement, we'll only gain 1 second or 2, but it could become more interesting with bigger project.
 
-What our script does is that it detects the file type you want to flash and does to proper operation.
+What our script does is that it detects the file type (using the `file` command) you want to flash and does the proper operation.
 
 ```bash
 # If the file is a zImage
@@ -195,5 +196,282 @@ fi
 
 If it's a system image we want to flash, we perform a `dd`, if it's a `zImage`, we just replace the existing one on the sdcard's partition.
 
-## Kernel hardening
+## Giving a purpose to our board
+That's wonderful, we have an embedded system that we can flash remotly, but it's pointless for now because our raspberry doesn't offer any service.
+So we will try here to give a purpose to our raspberry by making it a remote game machine. We will install [nInvaders](http://ninvaders.sourceforge.net/) to be able to play the Invaders game in the CLI through the network.
 
+### Looking at nInvaders
+First, download [the source code](https://sourceforge.net/projects/ninvaders/files/), we will tell buildroot to compile it for us and to install it in the initial ramfs.
+The downloaded file is a compressed tar archive, we extract it and look at the `Makefile` :
+```
+CC=gcc
+CFLAGS=-O3 -Wall
+LIBS=-lncurses
+
+CFILES=globals.c view.c aliens.c ufo.c player.c nInvaders.c
+HFILES=globals.h view.h aliens.h ufo.h player.h nInvaders.h
+OFILES=globals.o view.o aliens.o ufo.o player.o nInvaders.o
+all:            nInvaders
+
+nInvaders:      $(OFILES) $(HFILES)
+                $(CC) $(LDFLAGS) -o$@ $(OFILES) $(LIBS)
+
+.c.o:
+                $(CC) -c  -I. $(CFLAGS) $(OPTIONS) $<
+clean:
+                rm -f nInvaders $(OFILES)
+```
+We can see the package uses the `ncurses` library. It's a dependency we will also have to install.
+
+### Create a buildroot package
+You can find how to create a buildroot package [here](https://buildroot.org/downloads/manual/manual.html#adding-packages) on the online documentation.
+
+Let's create a directory for our package :
+```
+$ mkdir package/ninvaders
+```
+
+And we create a basic config file :
+```
+$ cat package/ninvaders/Config.in
+config BR2_PACKAGE_NINVADERS
+        bool "nInvaders"
+        help
+          Ever wanted to play space invaders when you can't find a GUI?
+          Now you can!
+```
+
+The online doc tells us :
+```
+Use a select type of dependency for dependencies on libraries. These dependencies are generally not obvious and it therefore make sense to have the kconfig system ensure that the dependencies are selected.
+```
+
+So just before the `help` statement in the `Config.in`, we will add a `select` statement to tell buildroot that by selecting the `nInvaders` package, you also have to select the `ncurses`
+library. This ensures that when we install nInvaders, all requirements are met.
+
+We first have to find the Kconfig name of ncurses, it can be done easily by looking at `package/ncurses/Config.in`.
+So before the `help` statement, we add :
+```
+select BR2_PACKAGE_NCURSES
+```
+
+In order to tell buildroot to use that config, we have to edit the parent `Config.in` in the `package` folder.
+We add the package under the `Games` category, for obvious reasons :)
+```
+$ grep Games package/Config.in -A 11
+menu "Games"
+        source "package/chocolate-doom/Config.in"
+        source "package/doom-wad/Config.in"
+        source "package/flare-engine/Config.in"
+        source "package/flare-game/Config.in"
+        source "package/gnuchess/Config.in"
+        source "package/lbreakout2/Config.in"
+        source "package/ltris/Config.in"
+        source "package/lugaru/Config.in"
+        source "package/minetest/Config.in"
+        source "package/minetest-game/Config.in"
+        source "package/ninvaders/Config.in"
+```
+
+Start a `make menuconfig` nInvaders should be there under `Target packages -> Games`.
+Now if you tick nInvaders and you go under `Target packages -> Libraries -> Text and terminal handling`, you should see ncurses ticked and in a special state that prevents the user from unticking it (because nInvaders needs it to work).
+
+Now we have to create a `.mk` file, it describes how the package should be downloaded, configured, built, installed, etc.
+We will create a generic package because nInvaders do not use any particular build system. The doc says :
+`This typically includes packages whose build system is based on hand-written Makefiles or shell scripts.`
+Which is exactly the case here.
+You can find a tutorial on the online documentation [here](https://buildroot.org/downloads/manual/manual.html#generic-package-tutorial).
+
+Here's what our `ninvaders.mk` file looks like :
+```
+################################################################################
+#
+# nInvaders
+#
+################################################################################
+
+NINVADERS_VERSION = 0.1.1
+NINVADERS_SOURCE = ninvaders-$(NINVADERS_VERSION).tar.gz
+NINVADERS_SITE = https://downloads.sourceforge.net/project/ninvaders/ninvaders/$(NINVADERS_VERSION)
+NINVADERS_DEPENDENCIES = ncurses
+
+define NINVADERS_BUILD_CMDS
+    $(MAKE) $(TARGET_CONFIGURE_OPTS) -C $(@D) all
+endef
+
+define NINVADERS_INSTALL_TARGET_CMDS
+    $(INSTALL) -D -m 0755 $(@D)/nInvaders $(TARGET_DIR)/usr/bin
+endef
+
+#define NINVADERS_USERS
+#    foo -1 libfoo -1 * - - - LibFoo daemon
+#endef
+
+#define NINVADERS_PERMISSIONS
+#    /bin/foo  f  4755  foo  libfoo   -  -  -  -  -
+#endef
+
+$(eval $(generic-package))
+```
+
+Then we upgrade our version file, do a `make BR2_JLEVEL=3`, and in its output, we can find the following steps :
+```
+>>> ninvaders 0.1.1 Downloading
+>>> ninvaders 0.1.1 Extracting
+>>> ninvaders 0.1.1 Patching
+>>> ninvaders 0.1.1 Configuring
+>>> ninvaders 0.1.1 Building
+>>> ninvaders 0.1.1 Installing to target
+```
+
+In the `Downloading` step, we find the following :
+```
+Location: https://netix.dl.sourceforge.net/project/ninvaders/ninvaders/0.1.1/ninvaders-0.1.1.tar.gz
+[...]
+Resolving netix.dl.sourceforge.net (netix.dl.sourceforge.net)... 87.121.121.2
+Connecting to netix.dl.sourceforge.net (netix.dl.sourceforge.net)|87.121.121.2|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 31275 (31K) [application/x-gzip]
+Saving to: ‘/home/shellcode/Tools/buildroot-rpi3/output/build/.ninvaders-0.1.1.tar.gz.zytqI9/output’
+```
+
+So buildroot successfuly downloaded `nInvaders` from the provided URL in the `ninvaders.mk`.
+We can now upgrade the zImage with our `upgrade.sh` script :
+```
+$ ./upgrade.sh 192.168.0.42 ~/.ssh/buildroot output/images/zImage
+Upgrading zImage only...
+The host is currently running the following version : 1.4
+Transfering system image to remote system...
+zImage                      100%   24MB   2.3MB/s   00:10
+Writing to sdcard...
+Rebooting remote system, waiting for it to be up...
+The host is currently running the following version : 1.5
+```
+
+If you ssh into your raspberry, you should be able to use the `nInvaders` command and play.
+
+### Make nInvaders playable remotely
+SSH is not really convenient to expose a game on the network, because the user has to log in first. It would be great to be able to initiate a connection on a specific port of our device and being able to play the game immediatly.
+So we will create a telnet server using `telnetd` which will start nInvader when we connect to it.
+In order to install it, we will edit busybox's configuration. To do so, perform the following command :
+```
+$ make busybox-menuconfig
+```
+
+And under `Network utilities`, tick `telnetd`, `make` and upgrade the sdcard again.
+Once the changes have been applied, you should be able to connect to your raspberry using telnet :
+```
+$ telnet 192.168.0.42
+Trying 192.168.0.42...
+Connected to 192.168.0.42.
+Escape character is '^]'.
+
+buildroot login:
+```
+
+We are able to gain a remote shell like SSH. Except that telnet is totally insecure, the communications aren't encrypted. Therefore it shouldn't be used to obtain a shell. However, it can be really great to access our game !
+The telnet server daemon is started at boot thanks to the script `/etc/init.d/S50telnet` :
+```
+#!/bin/sh
+#
+# Start telnet....
+#
+
+TELNETD_ARGS=-F
+[ -r /etc/default/telnet ] && . /etc/default/telnet
+
+start() {
+      printf "Starting telnetd: "
+      start-stop-daemon -S -q -m -b -p /var/run/telnetd.pid \
+                        -x /usr/sbin/telnetd -- $TELNETD_ARGS
+      [ $? = 0 ] && echo "OK" || echo "FAIL"
+}
+
+stop() {
+        printf "Stopping telnetd: "
+        start-stop-daemon -K -q -p /var/run/telnetd.pid \
+                          -x /usr/sbin/telnetd
+        [ $? = 0 ] && echo "OK" || echo "FAIL"
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart|reload)
+        stop
+        start
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac
+
+exit $?
+```
+
+As we can see in this script, `/usr/sbin/telnetd` is started and its arguments are stored in the `$TELNETD_ARGS`.
+
+Here's the help of that telnet server :
+```
+BusyBox v1.29.2 (2018-09-27 18:10:08 CEST) multi-call binary.
+
+Usage: telnetd [OPTIONS]
+
+Handle incoming telnet connections
+
+        -l LOGIN        Exec LOGIN on connect
+        -f ISSUE_FILE   Display ISSUE_FILE instead of /etc/issue
+        -K              Close connection as soon as login exits
+                        (normally wait until all programs close slave pty)
+        -p PORT         Port to listen on
+        -b ADDR[:PORT]  Address to bind to
+        -F              Run in foreground
+        -i              Inetd mode
+        -w SEC          Inetd 'wait' mode, linger time SEC
+        -S              Log to syslog (implied by -i or without -F and -w)
+```
+
+So all we have to do is change the login program (thanks to `-l`) like that :
+```
+TELNETD_ARGS="-F -l /usr/bin/nInvaders"
+```
+
+We restart the telnet daemon :
+```
+# /etc/init.d/S50telnet restart
+```
+
+And now when we telnet the pi, the game starts :)
+
+We have to make thoses changes permanent, we will use buildroot's overlay to overwrite telnet's config. I will not explain that once again, we've done that already previously.
+Do not forget to make your script executable in the overlay, otherwise it will not start at boot :
+```
+$ chmod +x board/raspberrypi3/overlay/etc/init.d/S50telnet
+```
+Now `make`, flash and try to telnet your pi.
+Unfortunatly, the colors are not working. That's because of the `TERM` variable which by default is set to `vt102` which seems not to support colors...
+So before the telnetd daemon start, we have to change the `TERM` variable to a terminal emulator which supports colors. We will use `xterm`.
+
+Juste before the call to `start-stop-daemon` we add the following :
+```
+TERM=xterm
+```
+
+Rebuild and flash the zImage. The colors are now working properly when telneting the raspberry.
+
+## Hardening
+
+### New user
+
+
+### Kernel
+
+### SSH
+
+### SELinux
+
+### umask

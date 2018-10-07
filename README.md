@@ -135,8 +135,8 @@ whole system is loaded in RAM. Once the sdcard is patched, all we have to do to 
 
 We will see two different ways of altering our system remotly.
 
-### Flash whole sdcard
-This method is the more drastic one, it will write every single byte of the sdcard. It can be really time consuming depending on how big your system image is.
+### Flash the whole sdcard
+This method is the more drastic one, it will write the entire system image on the sdcard. It can be really time consuming depending on how big your system image is.
 All we have to do is transfer the new sdcard.img to the pi using `scp` and execute `dd` remotly using `ssh`.
 
 We write a small script to automate the task for us : see ![upgrade.sh](https://github.com/ShellCode33/SecuredEmbeddedSystem/blob/master/upgrade.sh)
@@ -306,7 +306,7 @@ endef
 $(eval $(generic-package))
 ```
 
-Then we upgrade our version file, do a `make BR2_JLEVEL=3`, and in its output, we can find the following steps :
+Then we upgrade our version file, do a `make BR2_JLEVEL=4`, and in its output, we can find the following steps :
 ```
 >>> ninvaders 0.1.1 Downloading
 >>> ninvaders 0.1.1 Extracting

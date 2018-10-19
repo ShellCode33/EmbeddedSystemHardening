@@ -125,7 +125,9 @@ Warning: Permanently added '192.168.0.42' (ECDSA) to the list of known hosts.
 uid=0(root) gid=0(root) groups=0(root),10(wheel)
 ```
 
-If you have a warning message, you might have to remove the last entry of your `~/.ssh/known_hosts` file because the identity of the pi changes every time you flash a new image.
+If you have a warning message, you might have to remove the last entry of your `~/.ssh/known_hosts` file because the identity (the ssh host keys) of the pi changes every time you flash
+a new image and boot for the first time again.
+In the future, to avoid having to remove the entry in `known_hosts` everytime, we will use `-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no` as parameter to ssh.
 
 ## Upgrade through network
 Now that we can successfuly communicate with our raspberry, it would be great if we were able to flash the system remotely without having to unplug the sdcard, flash it from our computer,

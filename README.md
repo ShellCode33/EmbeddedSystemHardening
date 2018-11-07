@@ -199,7 +199,7 @@ fi
 If it's a system image we want to flash, we perform a `dd`, if it's a `zImage`, we just replace the existing one on the sdcard's partition.
 
 ## Manage version automatically
-First, delete the version file from your overlay.
+First, delete `board/raspberrypi3/overlay/version` and `output/target/version`.
 
 Then append the following to the post-build script :
 ```bash
@@ -211,9 +211,9 @@ else
     echo 1 > "${TARGET_DIR}/version"
 fi
 ```
-It will just update the version number of the build.
+It will just create/update the version number of the build.
 
-## Giving a purpose to our board
+## Give a purpose to our board
 That's wonderful, we have an embedded system that we can flash remotly, but it's pointless for now because our raspberry doesn't offer any service.
 So we will try here to give a purpose to our raspberry by making it a remote game machine. We will install [nInvaders](http://ninvaders.sourceforge.net/) to be able to play the Invaders game in the CLI through the network.
 
@@ -475,12 +475,58 @@ Rebuild and flash the zImage. The colors are now working properly when telneting
 ## Hardening
 
 ### New user
+We will create a new user to run nInvaders. Currently nInvaders is started by telnetd which runs as root. nInvaders could be vulnerable and if someone were able to exploit it, he would be root on the system. That's why we create a restricted user to lower the privileges of a potential attacker who exploited the binary.
 
+Buildroot can create that user automatically by specifying in `ninvaders.mk` the following :
+```
+TODO
+```
 
-### Kernel
+Unfortunatly telnet binds the port 23 by default, but you have to be root to bind a port below 1024.
+In order to allow non-root users to bind those ports, we will have to perform the following command :
+```
+sysctl net.ipv4.ip_unprivileged_port_start=0
+```
+It's a huge security issue to do that on a classic system (laptops, servers, ...) but it's totally acceptable on an embedded system because we control everything we do and there will be nobody using the system (installing programs, ...), only a specific service will be accessible from the outside.
+
+Add the command above to the telnetd start up script `board/raspberrypi3/overlay/etc/init.d/S50telnet` just before the daemon starts.
+
+### Firewalling
+By default, the raspberry has no network limitations, if we install a package that binds a port and we didn't notice , it could be possible to hack the service behind and gain access to the system.
+To be sure that no communication other than the ones we want are possible, we will use *iptables* to block everything. We only need to be able to communicate on ports 21 (SSH) and 23 (telnet ninvaders).
+We will even block the outgoing traffic. It can prevent an attacker from using our embedded system to contribute to DDOS attacks for example.
+
+First we have to enable the *iptables* package under `Target packages -> Networking applications`.
+
+Then we have to create a script that will set iptables rules for us.
+This script will look as follow :
+```
+*filter
+# By default, we drop everything, no traffic allowed.
+:INPUT DROP [0:0]
+:FORWARD DROP [0:0]
+:OUTPUT DROP [0:0]
+# Allow loopback
+-A INPUT -i lo -j ACCEPT
+# Drop invalid packages
+-A INPUT -m conntrack --ctstate INVALID -j DROP
+# Allow incoming connections when established already
+-A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+# Allow outgoing traffic on existing connections
+-A OUTPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+# Allow ping
+-A INPUT -p icmp -j ACCEPT
+# Allow new connections on nInvaders port
+-A INPUT -p tcp -m tcp --dport 1337 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+# Allow SSH
+-A INPUT -p tcp -m tcp --dport 1337 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+COMMIT
+```
 
 ### SSH
+- disable root password
+- root ssh key only
+- 
 
-### SELinux
+### Seccomp
 
-### umask

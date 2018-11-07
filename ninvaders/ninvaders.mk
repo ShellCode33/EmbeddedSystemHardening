@@ -17,4 +17,10 @@ define NINVADERS_INSTALL_TARGET_CMDS
     $(INSTALL) -D -m 0755 $(@D)/nInvaders $(TARGET_DIR)/usr/bin
 endef
 
+#Add user ninvaders
+define NINVADERS_USERS
+    ninvaders -1 ninvaders -1 !=ninvaders /home - -
+endef
+
 $(eval $(generic-package))
+

@@ -479,9 +479,10 @@ We will create a new user to run nInvaders. Currently nInvaders is started by te
 
 Buildroot can create that user automatically by specifying in `ninvaders.mk` the following :
 ```
-TODO
+define NINVADERS_USERS
+    ninvaders -1 ninvaders -1 !=ninvaders /home - -
+endef
 ```
-
 Unfortunatly telnet binds the port 23 by default, but you have to be root to bind a port below 1024.
 In order to allow non-root users to bind those ports, we will have to perform the following command :
 ```
@@ -528,5 +529,9 @@ COMMIT
 - root ssh key only
 - 
 
+### Binary protections
+In the menuconfig, it is possible to enable binary protections by going to `Build-options` and then activate all three options under `*** Security Hardenning Option ***`. You should set those options to the maximum level of security unless it significantly affects the performance or throw compilation errors.  
+
 ### Seccomp
+
 

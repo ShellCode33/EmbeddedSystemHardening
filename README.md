@@ -201,7 +201,7 @@ If it's a system image we want to flash, we perform a `dd`, if it's a `zImage`, 
 ## Manage version automatically
 First, delete `board/raspberrypi3/overlay/version` and `output/target/version`.
 
-Then append the following to the post-build script :
+Then append the following to the `board/raspberrypi3/post-build.sh` script :
 ```bash
 if [ -e ${TARGET_DIR}/version ]; then
     CURRENT_VERSION="$(cat ${TARGET_DIR}/version)"

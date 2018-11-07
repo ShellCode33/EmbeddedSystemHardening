@@ -43,7 +43,7 @@ trap ctrl_c INT
 
 check_version() {
     echo -n "The host is currently running the following version : "
-    ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i $SSH_KEY $USER"@"$IP 'cat /version' 2> /dev/null
+    ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i $SSH_KEY $USER"@"$IP 'cat /etc/build-id' 2> /dev/null
 }
 
 check_version

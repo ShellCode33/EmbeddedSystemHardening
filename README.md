@@ -116,7 +116,7 @@ $ cp ~/.ssh/buildroot.pub board/raspberrypi3/overlay/root/.ssh/authorized_keys
 
 `make` your project, flash your sdcard, and you should be able to ssh into the pi using the identity file :
 ```
-$ ssh -i ssh/id_rsa root@192.168.0.42
+$ ssh -i ~/.ssh/buildroot root@192.168.0.42
 The authenticity of host '192.168.0.42 (192.168.0.42)' can't be established.
 ECDSA key fingerprint is SHA256:LJHExFkbAg5q90oB/ZZzAPNDao32dsWu4KeGYL6iLwg.
 Are you sure you want to continue connecting (yes/no)? yes
@@ -197,6 +197,21 @@ fi
 ```
 
 If it's a system image we want to flash, we perform a `dd`, if it's a `zImage`, we just replace the existing one on the sdcard's partition.
+
+## Manage version automatically
+First, delete the version file from your overlay.
+
+Then append the following to the post-build script :
+```bash
+if [ -e ${TARGET_DIR}/version ]; then
+    CURRENT_VERSION="$(cat ${TARGET_DIR}/version)"
+    NEW_VERSION=$((CURRENT_VERSION+1))
+    echo ${NEW_VERSION} > "${TARGET_DIR}/version"
+else
+    echo 1 > "${TARGET_DIR}/version"
+fi
+```
+It will just update the version number of the build.
 
 ## Giving a purpose to our board
 That's wonderful, we have an embedded system that we can flash remotly, but it's pointless for now because our raspberry doesn't offer any service.

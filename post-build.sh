@@ -11,7 +11,7 @@ tty1::respawn:/sbin/getty -L  tty1 0 vt100 # HDMI console' ${TARGET_DIR}/etc/ini
 fi
 
 if [ -e ${TARGET_DIR}/version ]; then
-    CURRENT_VERSION="$(cat ${TARGET_DIR}/etc/build-version)"
+    CURRENT_VERSION="$(cat ${TARGET_DIR}/version)"
     NEW_VERSION=$((CURRENT_VERSION+1))
     echo ${NEW_VERSION} > "${TARGET_DIR}/version"
 else

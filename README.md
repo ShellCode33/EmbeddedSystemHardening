@@ -494,7 +494,7 @@ Add the command above to the telnetd start up script `board/raspberrypi3/overlay
 
 ### Firewalling
 By default, the raspberry has no network limitations, if we install a package that binds a port and we didn't notice , it could be possible to hack the service behind and gain access to the system.
-To be sure that no communication other than the ones we want are possible, we will use *iptables* to block everything. We only need to be able to communicate on ports 21 (SSH) and 23 (telnet ninvaders).
+To be sure that no communication other than the ones we want are possible, we will use *iptables* to block everything. We only need to be able to communicate on ports 22 (SSH) and 23 (telnet ninvaders).
 We will even block the outgoing traffic. It can prevent an attacker from using our embedded system to contribute to DDOS attacks for example.
 
 First we have to enable the *iptables* package under `Target packages -> Networking applications`.

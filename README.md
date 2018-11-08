@@ -507,18 +507,25 @@ This script will look as follow :
 :INPUT DROP [0:0]
 :FORWARD DROP [0:0]
 :OUTPUT DROP [0:0]
+
 # Allow loopback
 -A INPUT -i lo -j ACCEPT
+
 # Drop invalid packages
 -A INPUT -m conntrack --ctstate INVALID -j DROP
+
 # Allow incoming connections when established already
 -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+
 # Allow outgoing traffic on existing connections
 -A OUTPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+
 # Allow ping
 -A INPUT -p icmp -j ACCEPT
+
 # Allow new connections on SSH and Telnet ports
--A INPUT -p tcp -m tcp -m multiport --dport 22,23 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+-A INPUT -p tcp -m tcp --dport 22 -m conntrack --ctstate NEW -j ACCEPT
+-A INPUT -p tcp -m tcp --dport 23 -m conntrack --ctstate NEW -j ACCEPT
 COMMIT
 ```
 

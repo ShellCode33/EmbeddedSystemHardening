@@ -517,10 +517,8 @@ This script will look as follow :
 -A OUTPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 # Allow ping
 -A INPUT -p icmp -j ACCEPT
-# Allow new connections on nInvaders port
--A INPUT -p tcp -m tcp --dport 1337 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
-# Allow SSH
--A INPUT -p tcp -m tcp --dport 1337 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+# Allow new connections on SSH and Telnet ports
+-A INPUT -p tcp -m tcp -m multiport --dport 22,23 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
 COMMIT
 ```
 

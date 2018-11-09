@@ -51,8 +51,18 @@ check_version
 echo "Transfering system image to remote system..."
 scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i $SSH_KEY $IMAGE $USER"@"$IP:/tmp 2> /dev/null
 
+if [ $? -ne 0 ]; then
+    echo "Failed"
+    exit 1
+fi
+
 echo "Writing to sdcard..."
 ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i $SSH_KEY $USER"@"$IP "${upgrade_command}; sync; /sbin/reboot;" 2> /dev/null
+
+if [ $? -ne 0 ]; then
+    echo "Failed"
+    exit 1
+fi
 
 echo "Rebooting remote system, waiting for it to be up..."
 

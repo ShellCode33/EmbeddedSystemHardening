@@ -530,9 +530,7 @@ COMMIT
 ```
 
 ### SSH
-- disable root password
-- root ssh key only
-- 
+For a better security level with SSH we have to disable SSH login. We will always connect with the authorized key. Enter the `menuconfig -> System Configuration` and untick "Enable root login with password".  
 
 ### Binary protections
 In the menuconfig, it is possible to enable binary protections by going to `Build-options` and then activate all three options under `*** Security Hardenning Option ***`. You should set those options to the maximum level of security unless it significantly affects the performance or throw compilation errors.  

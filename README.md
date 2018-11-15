@@ -530,13 +530,15 @@ COMMIT
 ```
 
 ### SSH
-We decided to keep SSH running on our embedded system to still be able to prodive updates. But in theory, it would be better to completely uninstall SSH and therefore, lock the device.
+We decided to keep SSH running on our embedded system to still be able to provide updates. But in theory, it would be better to completely uninstall SSH and therefore, lock the device.
 
 For a better security level with SSH we have to disable password authentication. From now, we will always connect using the SSH key. Enter the `menuconfig -> System Configuration` and untick "Enable root login with password".
 
 ### Binary protections
-In the menuconfig, it is possible to enable binary protections by going to `Build-options` and then activate all three options under `*** Security Hardenning Option ***`. You should set those options to the maximum level of security unless it significantly affects the performance or throw compilation errors.  
+In the menuconfig, it is possible to enable binary protections by going to `Build-options` and then activate all three options under `*** Security Hardenning Option ***`. You should set those options to the maximum level of security unless it significantly affects the performance or crashes the program.
+Thoses protections aim to prevent buffer overflow exploitations.
 
 ### Seccomp
 
+First go in the menuconfig and tick `Target packages -> Libraries -> Other -> libseccomp`.
 

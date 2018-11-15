@@ -500,8 +500,11 @@ We will even block the outgoing traffic. It can prevent an attacker from using o
 First we have to enable the *iptables* package under `Target packages -> Networking applications`.
 
 Then we have to create a script that will set iptables rules for us.
-This script will look as follow :
+To do so, create a script called `S41iptables` containing the following :
 ```
+#!/bin/bash
+
+iptables-restore <<EOF
 *filter
 # By default, we drop everything, no traffic allowed.
 :INPUT DROP [0:0]
@@ -527,7 +530,11 @@ This script will look as follow :
 -A INPUT -p tcp -m tcp --dport 22 -m conntrack --ctstate NEW -j ACCEPT
 -A INPUT -p tcp -m tcp --dport 23 -m conntrack --ctstate NEW -j ACCEPT
 COMMIT
+EOF
+
+exit $?
 ```
+And place it in `board/raspberrypi3/overlay/etc/init.d/`. Don't forget to `chmod +x` the script.
 
 ### SSH
 We decided to keep SSH running on our embedded system to still be able to provide updates. But in theory, it would be better to completely uninstall SSH and therefore, lock the device.
@@ -542,3 +549,82 @@ Thoses protections aim to prevent buffer overflow exploitations.
 
 First go in the menuconfig and tick `Target packages -> Libraries -> Other -> libseccomp`.
 
+Download nInvaders and `make` it.
+Then, in order to list which syscalls nInvaders uses, we will use `strace` and redirect its output (on stderr) into a file :
+```
+$ strace ./nInvaders 2> syscalls
+```
+Play a little to be sure all the used syscalls are listed.
+
+The `syscalls` file will contain lines such as :
+```
+write(1, " / _ \\_/ // _ \\ |/ / _ `/ _  / -"..., 48) = 48
+```
+It means nInvaders performed a `write` syscall.
+
+Here's a small script to parse the output file and generate the seccomp C code :
+```python
+# coding: utf-8
+
+if __name__ == "__main__":
+
+    syscalls = set()
+
+    with open("syscalls", "r") as file:
+        for line in file:
+            if "(" in line:
+                syscall = line.split("(")[0]
+                syscalls.add(syscall)
+
+    if len(syscalls) == 0:
+        print("No syscall detected. Is it a program ??")
+        exit(1)
+
+    print("scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_KILL);")
+
+    for syscall in syscalls:
+        print(f"seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS({syscall}), 0);")
+
+    print("seccomp_load(ctx);")
+```
+
+And here's the output :
+```
+$ python extract.py
+scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_KILL);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(rt_sigaction), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(brk), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(mmap), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(mprotect), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(rt_sigreturn), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(fstat), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(access), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(stat), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(poll), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(openat), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(setitimer), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(munmap), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(lseek), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(read), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(close), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(execve), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(arch_prctl), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(ioctl), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(write), 0);
+seccomp_load(ctx);
+```
+
+Create a backup of nInvaders.c :
+```
+$ cp nInvaders.c nInvaders.c.original
+```
+
+And add the C code above at the beginning of the main function inside nInvaders.c (don't forget to include seccomp.h at the top of the file).
+
+Then create a patch from the old and the new version of nInvaders :
+```
+$ diff -Naur nInvaders.c nInvaders.c.original > ninvaders.patch
+```
+
+Place the patch file in `package/ninvaders` and that's it !
+Rebuild nInvaders and you're good to go !

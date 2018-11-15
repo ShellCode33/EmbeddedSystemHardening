@@ -473,7 +473,6 @@ TERM=xterm
 Rebuild and flash the zImage. The colors are now working properly when telneting the raspberry.
 
 ## Hardening
-
 ### New user
 We will create a new user to run nInvaders. Currently nInvaders is started by telnetd which runs as root. nInvaders could be vulnerable and if someone were able to exploit it, he would be root on the system. That's why we create a restricted user to lower the privileges of a potential attacker who exploited the binary.
 
@@ -535,8 +534,10 @@ We decided to keep SSH running on our embedded system to still be able to prodiv
 For a better security level with SSH we have to disable password authentication. From now, we will always connect using the SSH key. Enter the `menuconfig -> System Configuration` and untick "Enable root login with password".
 
 ### Binary protections
-In the menuconfig, it is possible to enable binary protections by going to `Build-options` and then activate all three options under `*** Security Hardenning Option ***`. You should set those options to the maximum level of security unless it significantly affects the performance or throw compilation errors.  
+In the menuconfig, it is possible to enable binary protections by going to `Build-options` and then activate all three options under `*** Security Hardenning Option ***`. You should set those options to the maximum level of security unless it significantly affects the performance or throw compilation errors.
+**fstack-protector** emit extra code to check for buffer overflows by adding canaries onto the stack. Setting it  to ALL will protect all functions.
+**RELRO (RELocation Read Only)** is a security measure which makes some binary sections read-only. Setting it to FULL will make the Global Offset Table read-only preventing from GOT overwrite attack.
+**Forfity_source** add additional checks to detect buffer-overflows. Setting it to AGRESSIVE will add checks at compile-time and at run-time
+ 
 
 ### Seccomp
-
-

@@ -500,7 +500,7 @@ First we have to enable the *iptables* package under `Target packages -> Network
 
 Then we have to create a script that will set iptables rules for us.
 To do so, create a script called `S41iptables` containing the following :
-```
+```bash
 #!/bin/bash
 
 iptables-restore <<EOF

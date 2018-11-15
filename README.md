@@ -542,8 +542,11 @@ For a better security level with SSH we have to disable password authentication.
 
 ### Binary protections
 In the menuconfig, it is possible to enable binary protections by going to `Build-options` and then activate all three options under `*** Security Hardenning Option ***`. You should set those options to the maximum level of security unless it significantly affects the performance or throw compilation errors.
+
 **fstack-protector** emit extra code to check for buffer overflows by adding canaries onto the stack. Setting it to ALL will protect all functions.
+
 **RELRO (RELocation Read Only)** is a security measure which makes some binary sections read-only. Setting it to FULL will make the Global Offset Table read-only preventing from GOT overwrite attack.
+
 **Forfity_source** add additional checks to detect buffer-overflows. Setting it to AGRESSIVE will add checks at compile-time and at run-time.
  
 ### Seccomp

@@ -2,6 +2,30 @@
 This paper demonstrates how to use buildroot to configure a secured embedded system using a Rasperry Pi 3.
 In order to download buildroot, go to the [following page](https://buildroot.org/download.html). We suggest you take the latest stable release.
 
+Table of Contents
+=================
+
+   * [Linux Embedded](#linux-embedded)
+      * [Basic configuration](#basic-configuration)
+      * [Flash the system](#flash-the-system)
+      * [Overlay configuration](#overlay-configuration)
+      * [Network configuration](#network-configuration)
+      * [Create SSH keys](#create-ssh-keys)
+      * [Upgrade through network](#upgrade-through-network)
+         * [Flash the whole sdcard](#flash-the-whole-sdcard)
+         * [Flash the zImage](#flash-the-zimage)
+      * [Manage version automatically](#manage-version-automatically)
+      * [Give a purpose to our board](#give-a-purpose-to-our-board)
+         * [Looking at nInvaders](#looking-at-ninvaders)
+         * [Create a buildroot package](#create-a-buildroot-package)
+         * [Make nInvaders playable remotely](#make-ninvaders-playable-remotely)
+      * [Hardening](#hardening)
+         * [New user](#new-user)
+         * [Firewalling](#firewalling)
+         * [SSH](#ssh)
+         * [Binary protections](#binary-protections)
+         * [Seccomp](#seccomp)
+
 ## Basic configuration
 First, tell buildroot to use the default raspberrypi3 configuration :
 ```

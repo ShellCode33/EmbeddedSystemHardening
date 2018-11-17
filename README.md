@@ -2,10 +2,8 @@
 This paper demonstrates how to use buildroot to configure a secured embedded system using a Rasperry Pi 3.
 In order to download buildroot, go to the [following page](https://buildroot.org/download.html). We suggest you take the latest stable release.
 
-Table of Contents
-=================
+## Table of Contents
 
-   * [Linux Embedded](#linux-embedded)
       * [Basic configuration](#basic-configuration)
       * [Flash the system](#flash-the-system)
       * [Overlay configuration](#overlay-configuration)

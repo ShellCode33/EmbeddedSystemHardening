@@ -359,6 +359,8 @@ The host is currently running the following version : 1.5
 
 If you ssh into your raspberry, you should be able to use the `nInvaders` command and play.
 
+![alt ninvaders](https://raw.githubusercontent.com/ShellCode33/SecuredEmbeddedSystem/master/ninvaders.png)
+
 ### Make nInvaders playable remotely
 SSH is not really convenient to expose a game on the network, because the user has to log in first. It would be great to be able to initiate a connection on a specific port of our device and being able to play the game immediatly.
 So we will create a telnet server using `telnetd` which will start nInvader when we connect to it.
@@ -552,8 +554,12 @@ In the menuconfig, it is possible to enable binary protections by going to `Buil
 ### Seccomp
 
 First go in the menuconfig and tick `Target packages -> Libraries -> Other -> libseccomp`.
+Add seccomp as a dependency in `ninvaders.mk` :
+```
+INVADERS_DEPENDENCIES = ncurses seccomp
+```
 
-Download nInvaders and `make` it.
+Download nInvaders in tmp and `make` it.
 Then, in order to list which syscalls nInvaders uses, we will use `strace` and redirect its output (on stderr) into a file :
 ```
 $ strace ./nInvaders 2> syscalls
@@ -575,10 +581,21 @@ if __name__ == "__main__":
     syscalls = set()
 
     with open("syscalls", "r") as file:
+        seccomp_found = False
+
         for line in file:
-            if "(" in line:
+
+            # We don't want to list syscalls before our seccomp filter is effective
+            if not seccomp_found:
+                if line.startswith("seccomp"):
+                    seccomp_found = True
+
+            elif "(" in line:
                 syscall = line.split("(")[0]
                 syscalls.add(syscall)
+
+    if "seccomp" in syscalls:
+        syscalls.remove("seccomp")
 
     if len(syscalls) == 0:
         print("No syscall detected. Is it a program ??")
@@ -589,6 +606,7 @@ if __name__ == "__main__":
     for syscall in syscalls:
         print(f"seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS({syscall}), 0);")
 
+    print("seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(exit_group), 0);")
     print("seccomp_load(ctx);")
 ```
 
@@ -596,25 +614,20 @@ And here's the output :
 ```
 $ python extract.py
 scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_KILL);
-seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(rt_sigaction), 0);
-seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(brk), 0);
-seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(mmap), 0);
-seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(mprotect), 0);
-seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(rt_sigreturn), 0);
-seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(fstat), 0);
-seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(access), 0);
-seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(stat), 0);
-seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(poll), 0);
-seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(openat), 0);
-seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(setitimer), 0);
-seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(munmap), 0);
-seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(lseek), 0);
 seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(read), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(rt_sigreturn), 0);
 seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(close), 0);
-seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(execve), 0);
-seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(arch_prctl), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(brk), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(openat), 0);
 seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(ioctl), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(poll), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(stat), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(rt_sigaction), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(fstat), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(setitimer), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(access), 0);
 seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(write), 0);
+seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(exit_group), 0);
 seccomp_load(ctx);
 ```
 

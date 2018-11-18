@@ -578,9 +578,9 @@ In the menuconfig, it is possible to enable binary protections by going to `Buil
 Seccomp enables us to filter the syscalls a program is allowed to use. If an attacker were able to hack into nInvaders, he would be extremely limited by the syscalls he's able to make.
 
 First go in the menuconfig and tick `Target packages -> Libraries -> Other -> libseccomp`.
-Add seccomp as a dependency in `ninvaders.mk` :
+Add libseccomp as a dependency in `ninvaders.mk` :
 ```
-INVADERS_DEPENDENCIES = ncurses seccomp
+INVADERS_DEPENDENCIES = ncurses libseccomp
 ```
 
 Download nInvaders in tmp and `make` it.

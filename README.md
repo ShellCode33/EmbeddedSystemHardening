@@ -662,10 +662,24 @@ $ cp nInvaders.c nInvaders.c.original
 
 And add the C code above at the beginning of the main function inside nInvaders.c (don't forget to include seccomp.h at the top of the file).
 
-Then create a patch from the old and the new version of nInvaders :
+Then create a patch from the old and the new version of nInvaders standing in the parent folder output/build/ :
 ```
-$ diff -Naur nInvaders.c nInvaders.c.original > ninvaders.patch
+$ diff -aur ninvaders-0.1.1/nInvaders.c.original ninvaders-0.1.1/nInvaders.c  > ../../package/ninvaders/0001-seccomp.patch
 ```
 
-Place the patch file in `package/ninvaders` and that's it !
+We also need to create a patch to add libseccomp in the Makefile at output/build/ninvaders-0.1.1 :
+'''
+$ cp Makefile Makefile.original
+$ vim Makefile
+'''
+add lseccomp : LIBS=-lncurses -lseccomp
+Then as previously go back into the parent folder and perform this command :
+'''
+$ diff -aur ninvaders-0.1.1/Makefile.original ninvaders-0.1.1/Makefile  > ../../package/ninvaders/0002-lseccomp-Makefile.patch
+'''
+The patches files are now located in  `package/ninvaders`. If you get an error you should check .config file and set BR2_GLOBAL_DIR_PACKAGE="package".
 Rebuild nInvaders and you're good to go !
+'''
+$ make ninvaders-dirclean
+$ make ninvaders-rebuild
+'''

@@ -1,5 +1,5 @@
---- nInvaders.c.original	2018-11-15 17:53:37.746605624 +0100
-+++ nInvaders.c	2018-11-15 19:14:38.988170406 +0100
+--- ninvaders-0.1.1/nInvaders.c	2003-05-08 21:19:50.000000000 +0200
++++ ninvaders-0.1.1/ninvaders-patch.c	2018-11-18 14:49:32.019454312 +0100
 @@ -25,6 +25,7 @@
  #include <stdio.h>
  #include <string.h>
@@ -8,11 +8,12 @@
  #include "nInvaders.h"
  #include "player.h"
  #include "aliens.h"
-@@ -328,6 +329,28 @@
+@@ -328,7 +329,24 @@
  
  int main(int argc, char **argv)
  {
-+    scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_KILL);
+- 	weite = 0;
++ 	scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_KILL);
 +    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(read), 0);
 +    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(rt_sigreturn), 0);
 +    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(close), 0);
@@ -29,6 +30,7 @@
 +    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(exit_group), 0);
 +    seccomp_load(ctx);
 +
-  	weite = 0;
++    weite = 0;
  	score = 0;
  	lives = 3;
+ 	level = 0;

@@ -1,0 +1,10 @@
+--- ninvaders-0.1.1/Makefile.orig	2018-11-18 17:10:34.686175721 +0100
++++ ninvaders-0.1.1/Makefile	2018-11-18 17:10:52.016091014 +0100
+@@ -1,6 +1,6 @@
+ CC=gcc
+ CFLAGS=-O3 -Wall
+-LIBS=-lncurses
++LIBS=-lncurses -lseccomp
+ 
+ CFILES=globals.c view.c aliens.c ufo.c player.c nInvaders.c
+ HFILES=globals.h view.h aliens.h ufo.h player.h nInvaders.h

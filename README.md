@@ -660,31 +660,33 @@ Create a backup of nInvaders.c :
 $ cp nInvaders.c nInvaders.c.original
 ```
 
-And add the C code above at the beginning of the main function inside nInvaders.c (don't forget to include seccomp.h at the top of the file).
+And add the C code above at the beginning of the main function inside `nInvaders.c` (don't forget to include seccomp.h at the top of the file).
 
-Then create a patch from the old and the new version of nInvaders standing in the parent folder output/build/ :
+Then create a patch using the old and new version of `nInvaders.c` :
 ```
-$ diff -aur ninvaders-0.1.1/nInvaders.c.original ninvaders-0.1.1/nInvaders.c  > ../../package/ninvaders/0001-seccomp.patch
-```
-
-We also need to create a patch to add libseccomp in the Makefile at output/build/ninvaders-0.1.1 :
-
-```
-$ cp Makefile Makefile.original
-$ vim Makefile
+$ diff -aur nInvaders.c.original nInvaders.c > 0001-seccomp.patch
 ```
 
-Add lseccomp : LIBS=-lncurses -lseccomp.
-Then as previously go back into the parent folder and perform this command :
+We need to create another patch to add libseccomp in the Makefile of nInvaders.
+Repeat the same process : backup the Makefile, change the following in the new one:
 
 ```
-$ diff -aur ninvaders-0.1.1/Makefile.original ninvaders-0.1.1/Makefile  > ../../package/ninvaders/0002-lseccomp-Makefile.patch
+Add lseccomp : LIBS=-lncurses -lseccomp
 ```
 
-The patches files are now located in  `package/ninvaders`. If you get an error you should check .config file and set BR2_GLOBAL_DIR_PACKAGE="package".
+And perform a diff between the two files :
+```
+$ diff -aur Makefile.original Makefile  > 0002-Makefile.patch
+```
+
+You must place thoses patches under `package/ninvaders`. 
+Check that your `.config` file under buildroot's root has the following `BR2_GLOBAL_DIR_PACKAGE="package"` defined.
+
 Rebuild nInvaders and you're good to go !
-
 ```
 $ make ninvaders-dirclean
 $ make ninvaders-rebuild
 ```
+
+Check the logs, you should see nInvaders being patched.
+Flash your raspberry one last time, you now have a gaming machine safer than ever ! :)

@@ -671,7 +671,7 @@ We need to create another patch to add libseccomp in the Makefile of nInvaders.
 Repeat the same process : backup the Makefile, change the following in the new one:
 
 ```
-Add lseccomp : LIBS=-lncurses -lseccomp
+LIBS=-lncurses -lseccomp
 ```
 
 And perform a diff between the two files :
